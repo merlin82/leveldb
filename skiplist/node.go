@@ -12,7 +12,7 @@ func newNode(key interface{}, height int) *Node {
 
 	return x
 }
-func (node *Node) Next(level int) *Node {
+func (node *Node) getNext(level int) *Node {
 	return node.next[level]
 }
 

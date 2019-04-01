@@ -22,7 +22,7 @@ func (it *Iterator) Next() {
 	it.list.mu.RLock()
 	defer it.list.mu.RUnlock()
 
-	it.node = it.node.Next(0)
+	it.node = it.node.getNext(0)
 }
 
 // Advances to the previous position.
@@ -51,7 +51,7 @@ func (it *Iterator) SeekToFirst() {
 	it.list.mu.RLock()
 	defer it.list.mu.RUnlock()
 
-	it.node = it.list.head.Next(0)
+	it.node = it.list.head.getNext(0)
 }
 
 // Position at the last entry in list.

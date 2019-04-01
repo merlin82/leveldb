@@ -41,7 +41,7 @@ func (list *SkipList) Insert(key interface{}) {
 	}
 	x := newNode(key, height)
 	for i := 0; i < height; i++ {
-		x.setNext(i, prev[i].Next(i))
+		x.setNext(i, prev[i].getNext(i))
 		prev[i].setNext(i, x)
 	}
 }
@@ -75,7 +75,7 @@ func (list *SkipList) findGreaterOrEqual(key interface{}) (*Node, [kMaxHeight]*N
 	x := list.head
 	level := list.maxHeight - 1
 	for true {
-		next := x.Next(level)
+		next := x.getNext(level)
 		if list.keyIsAfterNode(key, next) {
 			x = next
 		} else {
@@ -95,7 +95,7 @@ func (list *SkipList) findLessThan(key interface{}) *Node {
 	x := list.head
 	level := list.maxHeight - 1
 	for true {
-		next := x.Next(level)
+		next := x.getNext(level)
 		if next == nil || list.comparator(next.key, key) >= 0 {
 			if level == 0 {
 				return x
@@ -112,7 +112,7 @@ func (list *SkipList) findlast() *Node {
 	x := list.head
 	level := list.maxHeight - 1
 	for true {
-		next := x.Next(level)
+		next := x.getNext(level)
 		if next == nil {
 			if level == 0 {
 				return x
