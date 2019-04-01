@@ -2,6 +2,7 @@ package skiplist
 
 import (
 	"math/rand"
+	"sync"
 
 	"github.com/merlin82/leveldb/utils"
 )
@@ -15,6 +16,7 @@ type SkipList struct {
 	maxHeight  int
 	head       *Node
 	comparator utils.Comparator
+	mu         sync.RWMutex
 }
 
 func New(comp utils.Comparator) *SkipList {
@@ -26,6 +28,9 @@ func New(comp utils.Comparator) *SkipList {
 }
 
 func (list *SkipList) Insert(key interface{}) {
+	list.mu.Lock()
+	defer list.mu.Unlock()
+
 	_, prev := list.findGreaterOrEqual(key)
 	height := list.randomHeight()
 	if height > list.maxHeight {
@@ -42,6 +47,8 @@ func (list *SkipList) Insert(key interface{}) {
 }
 
 func (list *SkipList) Contains(key interface{}) bool {
+	list.mu.RLock()
+	defer list.mu.RUnlock()
 	x, _ := list.findGreaterOrEqual(key)
 	if x != nil && list.comparator(x.key, key) == 0 {
 		return true

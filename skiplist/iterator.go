@@ -19,12 +19,18 @@ func (it *Iterator) Key() interface{} {
 // Advances to the next position.
 // REQUIRES: Valid()
 func (it *Iterator) Next() {
+	it.list.mu.RLock()
+	defer it.list.mu.RUnlock()
+
 	it.node = it.node.Next(0)
 }
 
 // Advances to the previous position.
 // REQUIRES: Valid()
 func (it *Iterator) Prev() {
+	it.list.mu.RLock()
+	defer it.list.mu.RUnlock()
+
 	it.node = it.list.findLessThan(it.node.key)
 	if it.node == it.list.head {
 		it.node = nil
@@ -33,18 +39,27 @@ func (it *Iterator) Prev() {
 
 // Advance to the first entry with a key >= target
 func (it *Iterator) Seek(target interface{}) {
+	it.list.mu.RLock()
+	defer it.list.mu.RUnlock()
+
 	it.node, _ = it.list.findGreaterOrEqual(target)
 }
 
 // Position at the first entry in list.
 // Final state of iterator is Valid() iff list is not empty.
 func (it *Iterator) SeekToFirst() {
+	it.list.mu.RLock()
+	defer it.list.mu.RUnlock()
+
 	it.node = it.list.head.Next(0)
 }
 
 // Position at the last entry in list.
 // Final state of iterator is Valid() iff list is not empty.
 func (it *Iterator) SeekToLast() {
+	it.list.mu.RLock()
+	defer it.list.mu.RUnlock()
+
 	it.node = it.list.findlast()
 	if it.node == it.list.head {
 		it.node = nil
