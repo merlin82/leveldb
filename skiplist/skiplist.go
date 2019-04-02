@@ -21,7 +21,7 @@ type SkipList struct {
 
 func New(comp utils.Comparator) *SkipList {
 	var skiplist SkipList
-	skiplist.head = newNode(0, kMaxHeight)
+	skiplist.head = newNode(nil, kMaxHeight)
 	skiplist.maxHeight = 1
 	skiplist.comparator = comp
 	return &skiplist
