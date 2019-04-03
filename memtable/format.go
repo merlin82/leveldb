@@ -5,19 +5,18 @@ import (
 	"encoding/binary"
 )
 
-type SequenceNumber int64
 type ValueType int
 
 const (
-	kTypeDeletion ValueType = 0
-	kTypeValue    ValueType = 1
+	TypeDeletion ValueType = 0
+	TypeValue    ValueType = 1
 )
 
 type InternalKey struct {
 	rep []byte
 }
 
-func newInternalKey(seq SequenceNumber, valueType ValueType, key, value []byte) *InternalKey {
+func newInternalKey(seq int64, valueType ValueType, key, value []byte) *InternalKey {
 	// Format of an entry is concatenation of:
 	//  4            : key.size() + 8
 	//  key bytes    : char[key.size()]
@@ -60,18 +59,20 @@ func (internalKey *InternalKey) valueType() ValueType {
 	return ValueType(tag & 0xff)
 }
 
-func (internalKey *InternalKey) seq() SequenceNumber {
+func (internalKey *InternalKey) seq() int64 {
 	tagOffset := binary.LittleEndian.Uint32(internalKey.rep) - 4
 	tag := binary.LittleEndian.Uint64(internalKey.rep[tagOffset:])
-	return SequenceNumber(tag >> 8)
+	return int64(tag >> 8)
 }
 
 func LookupKey(key []byte) *InternalKey {
-	buf := make([]byte, 4+len(key))
+	buf := make([]byte, 4+len(key)+8)
 	offset := 0
-	binary.LittleEndian.PutUint32(buf[offset:], uint32(len(key)))
+	binary.LittleEndian.PutUint32(buf[offset:], uint32(len(key)+8))
 	offset += 4
 	copy(buf[offset:], key)
+	offset += len(key)
+	binary.LittleEndian.PutUint64(buf[offset:], 0xffffffffffffffff)
 	return &InternalKey{rep: buf}
 }
 
@@ -84,7 +85,13 @@ func InternalKeyComparator(a, b interface{}) int {
 	bKey := b.(*InternalKey)
 	r := UserKeyComparator(aKey.userKey(), bKey.userKey())
 	if r == 0 {
-		return int(aKey.seq() - bKey.seq())
+		anum := aKey.seq()
+		bnum := bKey.seq()
+		if anum > bnum {
+			r = -1
+		} else if anum < bnum {
+			r = +1
+		}
 	}
 	return r
 }

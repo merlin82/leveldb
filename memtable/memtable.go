@@ -3,6 +3,7 @@ package memtable
 import (
 	"errors"
 
+	"github.com/merlin82/leveldb"
 	"github.com/merlin82/leveldb/skiplist"
 )
 
@@ -15,7 +16,12 @@ func New() *MemTable {
 	memTable.table = skiplist.New(InternalKeyComparator)
 	return &memTable
 }
-func (memTable *MemTable) Add(seq SequenceNumber, valueType ValueType, key, value []byte) {
+
+func (memTable *MemTable) NewIterator() leveldb.Iterator {
+	return memTable.table.NewIterator()
+}
+
+func (memTable *MemTable) Add(seq int64, valueType ValueType, key, value []byte) {
 	internalKey := newInternalKey(seq, valueType, key, value)
 	memTable.table.Insert(internalKey)
 }
@@ -29,7 +35,7 @@ func (memTable *MemTable) Get(key []byte) (bool, []byte, error) {
 		internalKey := it.Key().(*InternalKey)
 		if UserKeyComparator(key, internalKey.userKey()) == 0 {
 			// 判断valueType
-			if internalKey.valueType() == kTypeValue {
+			if internalKey.valueType() == TypeValue {
 				return true, internalKey.userValue(), nil
 			} else {
 				return true, nil, errors.New("not found")
