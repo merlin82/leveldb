@@ -3,44 +3,51 @@ package memtable
 import (
 	"errors"
 
-	"github.com/merlin82/leveldb"
+	"github.com/merlin82/leveldb/format"
 	"github.com/merlin82/leveldb/skiplist"
 )
 
 type MemTable struct {
-	table *skiplist.SkipList
+	table       *skiplist.SkipList
+	memoryUsage uint64
 }
 
 func New() *MemTable {
 	var memTable MemTable
-	memTable.table = skiplist.New(InternalKeyComparator)
+	memTable.table = skiplist.New(format.InternalKeyComparator)
 	return &memTable
 }
 
-func (memTable *MemTable) NewIterator() leveldb.Iterator {
-	return memTable.table.NewIterator()
+func (memTable *MemTable) NewIterator() *Iterator {
+	return &Iterator{listIter: memTable.table.NewIterator()}
 }
 
-func (memTable *MemTable) Add(seq int64, valueType ValueType, key, value []byte) {
-	internalKey := newInternalKey(seq, valueType, key, value)
+func (memTable *MemTable) Add(seq int64, valueType format.ValueType, key, value []byte) {
+	internalKey := format.NewInternalKey(seq, valueType, key, value)
+
+	memTable.memoryUsage += uint64(16 + len(key) + len(value))
 	memTable.table.Insert(internalKey)
 }
 
 func (memTable *MemTable) Get(key []byte) (bool, []byte, error) {
-	lookupKey := LookupKey(key)
+	lookupKey := format.LookupKey(key)
 
 	it := memTable.table.NewIterator()
 	it.Seek(lookupKey)
 	if it.Valid() {
-		internalKey := it.Key().(*InternalKey)
-		if UserKeyComparator(key, internalKey.userKey()) == 0 {
+		internalKey := it.Key().(*format.InternalKey)
+		if format.UserKeyComparator(key, internalKey.UserKey) == 0 {
 			// 判断valueType
-			if internalKey.valueType() == TypeValue {
-				return true, internalKey.userValue(), nil
+			if internalKey.Type == format.TypeValue {
+				return true, internalKey.UserValue, nil
 			} else {
 				return true, nil, errors.New("not found")
 			}
 		}
 	}
 	return false, nil, errors.New("not found")
+}
+
+func (memTable *MemTable) ApproximateMemoryUsage() uint64 {
+	return memTable.memoryUsage
 }

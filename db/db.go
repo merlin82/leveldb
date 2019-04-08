@@ -3,6 +3,8 @@ package db
 import (
 	"sync/atomic"
 
+	"github.com/merlin82/leveldb"
+
 	"github.com/merlin82/leveldb/memtable"
 )
 
@@ -11,7 +13,7 @@ type Db struct {
 	mem *memtable.MemTable
 }
 
-func Open() *Db {
+func Open() leveldb.LevelDb {
 	var db Db
 	db.seq = 0
 	db.mem = memtable.New()
