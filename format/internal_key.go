@@ -23,6 +23,7 @@ func NewInternalKey(seq int64, valueType ValueType, key, value []byte) *Internal
 	var internalKey InternalKey
 	internalKey.Seq = seq
 	internalKey.Type = valueType
+
 	internalKey.UserKey = make([]byte, len(key))
 	copy(internalKey.UserKey, key)
 	internalKey.UserValue = make([]byte, len(value))

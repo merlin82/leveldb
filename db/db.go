@@ -3,8 +3,7 @@ package db
 import (
 	"sync/atomic"
 
-	"github.com/merlin82/leveldb"
-
+	"github.com/merlin82/leveldb/format"
 	"github.com/merlin82/leveldb/memtable"
 )
 
@@ -13,7 +12,7 @@ type Db struct {
 	mem *memtable.MemTable
 }
 
-func Open() leveldb.LevelDb {
+func Open() *Db {
 	var db Db
 	db.seq = 0
 	db.mem = memtable.New()
@@ -22,9 +21,10 @@ func Open() leveldb.LevelDb {
 
 func (db *Db) Put(key, value []byte) error {
 	seq := atomic.AddInt64(&db.seq, 1)
-	db.mem.Add(seq, memtable.TypeValue, key, value)
+	db.mem.Add(seq, format.TypeValue, key, value)
 	return nil
 }
+
 func (db *Db) Get(key []byte) ([]byte, error) {
 	found, value, err := db.mem.Get(key)
 	if !found {
@@ -32,8 +32,9 @@ func (db *Db) Get(key []byte) ([]byte, error) {
 	}
 	return value, err
 }
+
 func (db *Db) Delete(key []byte) error {
 	seq := atomic.AddInt64(&db.seq, 1)
-	db.mem.Add(seq, memtable.TypeDeletion, key, nil)
+	db.mem.Add(seq, format.TypeDeletion, key, nil)
 	return nil
 }

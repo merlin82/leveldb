@@ -1,5 +1,9 @@
 package leveldb
 
+import (
+	"github.com/merlin82/leveldb/db"
+)
+
 type LevelDb interface {
 	Put(key, value []byte) error
 	Get(key []byte) ([]byte, error)
@@ -32,4 +36,8 @@ type Iterator interface {
 	// Position at the last entry in list.
 	// Final state of iterator is Valid() iff list is not empty.
 	SeekToLast()
+}
+
+func Open() LevelDb {
+	return db.Open()
 }
