@@ -50,6 +50,9 @@ func (builder *TableBuilder) Add(internalKey *format.InternalKey) {
 	}
 }
 func (builder *TableBuilder) flush() {
+	if builder.dataBlock.empty() {
+		return
+	}
 	builder.pendingIndexHandle.BlockHandle = builder.writeblock(builder.dataBlock)
 	builder.pendingIndexEntry = true
 }
@@ -65,7 +68,7 @@ func (builder *TableBuilder) Finish() error {
 		builder.pendingIndexEntry = false
 	}
 	var footer Footer
-	footer.indexHandle = builder.writeblock(builder.indexBlock)
+	footer.IndexHandle = builder.writeblock(builder.indexBlock)
 
 	// write footer block, 40 byte
 	footerRaw := make([]byte, 40)
@@ -88,5 +91,6 @@ func (builder *TableBuilder) writeblock(block *BlockBuilder) BlockHandle {
 	builder.offset += len(content)
 	_, builder.status = builder.writer.Write(content)
 
+	block.reset()
 	return blockHandle
 }

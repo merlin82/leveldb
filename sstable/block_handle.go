@@ -11,6 +11,6 @@ type IndexBlockHandle struct {
 }
 
 type Footer struct {
-	metaIndexHandle BlockHandle
-	indexHandle     BlockHandle
+	MetaIndexHandle BlockHandle
+	IndexHandle     BlockHandle
 }
