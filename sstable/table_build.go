@@ -1,8 +1,6 @@
 package sstable
 
 import (
-	"bytes"
-	"encoding/gob"
 	"io"
 
 	"github.com/merlin82/leveldb/format"
@@ -14,10 +12,10 @@ const (
 
 type TableBuilder struct {
 	writer             io.Writer
-	offset             int
-	numEntries         int
-	dataBlock          *BlockBuilder
-	indexBlock         *BlockBuilder
+	offset             int32
+	numEntries         int32
+	dataBlock          BlockBuilder
+	indexBlock         BlockBuilder
 	pendingIndexEntry  bool
 	pendingIndexHandle IndexBlockHandle
 	status             error
@@ -27,8 +25,6 @@ func NewTableBuilder(writer io.Writer) *TableBuilder {
 	var builder TableBuilder
 	builder.writer = writer
 	builder.pendingIndexEntry = false
-	builder.dataBlock = newBlockBuilder()
-	builder.indexBlock = newBlockBuilder()
 	return &builder
 }
 
@@ -37,7 +33,7 @@ func (builder *TableBuilder) Add(internalKey *format.InternalKey) {
 		return
 	}
 	if builder.pendingIndexEntry {
-		builder.indexBlock.add(builder.pendingIndexHandle)
+		builder.indexBlock.add(&builder.pendingIndexHandle)
 		builder.pendingIndexEntry = false
 	}
 	// todo : filter block
@@ -53,7 +49,7 @@ func (builder *TableBuilder) flush() {
 	if builder.dataBlock.empty() {
 		return
 	}
-	builder.pendingIndexHandle.BlockHandle = builder.writeblock(builder.dataBlock)
+	builder.pendingIndexHandle.BlockHandle = builder.writeblock(&builder.dataBlock)
 	builder.pendingIndexEntry = true
 }
 
@@ -64,20 +60,15 @@ func (builder *TableBuilder) Finish() error {
 
 	// write index block
 	if builder.pendingIndexEntry {
-		builder.indexBlock.add(builder.pendingIndexHandle)
+		builder.indexBlock.add(&builder.pendingIndexHandle)
 		builder.pendingIndexEntry = false
 	}
 	var footer Footer
-	footer.IndexHandle = builder.writeblock(builder.indexBlock)
+	footer.IndexHandle = builder.writeblock(&builder.indexBlock)
 
-	// write footer block, 40 byte
-	footerRaw := make([]byte, 40)
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	enc.Encode(footer)
-	copy(footerRaw, buf.Bytes())
-	// todo : magic
-	builder.writer.Write(footerRaw)
+	// write footer block
+	footer.EncodeTo(builder.writer)
+
 	return nil
 }
 
@@ -87,8 +78,8 @@ func (builder *TableBuilder) writeblock(block *BlockBuilder) BlockHandle {
 	builder.writer.Write(content)
 	var blockHandle BlockHandle
 	blockHandle.Offset = builder.offset
-	blockHandle.Size = len(content)
-	builder.offset += len(content)
+	blockHandle.Size = int32(len(content))
+	builder.offset += int32(len(content))
 	_, builder.status = builder.writer.Write(content)
 
 	block.reset()

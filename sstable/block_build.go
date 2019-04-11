@@ -2,27 +2,26 @@ package sstable
 
 import (
 	"bytes"
-	"encoding/gob"
+	//	"encoding/binary"
+	"io"
 )
 
+type BlockItem interface {
+	EncodeTo(w io.Writer) error
+	DecodeFrom(r io.Reader) error
+}
 type BlockBuilder struct {
 	buf bytes.Buffer
-	enc *gob.Encoder
-}
-
-func newBlockBuilder() *BlockBuilder {
-	var block BlockBuilder
-	block.enc = gob.NewEncoder(&block.buf)
-	return &block
 }
 
 func (block *BlockBuilder) reset() {
 	block.buf.Reset()
 }
 
-func (block *BlockBuilder) add(e interface{}) {
-	block.enc.Encode(e)
+func (block *BlockBuilder) add(item BlockItem) error {
+	return item.EncodeTo(&block.buf)
 }
+
 func (block *BlockBuilder) finish() []byte {
 	return block.buf.Bytes()
 }
