@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/merlin82/leveldb/memtable"
 	"github.com/merlin82/leveldb/sstable"
@@ -17,16 +16,11 @@ func tableFileName(name string, number int) string {
 }
 
 func buildTable(dbname string, table *memtable.MemTable) error {
-	file, err := os.Create(tableFileName(dbname, 123))
-	if err != nil {
-		return err
-	}
-	builder := sstable.NewTableBuilder(file)
+	builder := sstable.NewTableBuilder(tableFileName(dbname, 123))
 	iter := table.NewIterator()
 	for iter.SeekToFirst(); iter.Valid(); iter.Next() {
 		builder.Add(iter.InternalKey())
 	}
 	builder.Finish()
-	file.Close()
 	return nil
 }

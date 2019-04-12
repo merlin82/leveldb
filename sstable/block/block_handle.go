@@ -1,9 +1,11 @@
-package sstable
+package block
 
 import (
 	"encoding/binary"
 	"errors"
 	"io"
+
+	"github.com/merlin82/leveldb/format"
 )
 
 const (
@@ -11,25 +13,41 @@ const (
 )
 
 type BlockHandle struct {
-	Offset int32
-	Size   int32
+	Offset uint32
+	Size   uint32
+}
+
+func (blockHandle *BlockHandle) EncodeToBytes() []byte {
+	p := make([]byte, 8)
+	binary.LittleEndian.PutUint32(p, blockHandle.Offset)
+	binary.LittleEndian.PutUint32(p[4:], blockHandle.Size)
+	return p
+}
+
+func (blockHandle *BlockHandle) DecodeFromBytes(p []byte) {
+	if len(p) == 8 {
+		blockHandle.Offset = binary.LittleEndian.Uint32(p)
+		blockHandle.Size = binary.LittleEndian.Uint32(p[4:])
+	}
 }
 
 type IndexBlockHandle struct {
-	LastKey []byte
+	LastKey *format.InternalKey
 	BlockHandle
 }
 
+func (index *IndexBlockHandle) EncodeToInternalKey() *format.InternalKey {
+	index.LastKey.UserValue = index.BlockHandle.EncodeToBytes()
+	return index.LastKey
+}
+
 func (index *IndexBlockHandle) EncodeTo(w io.Writer) error {
-	binary.Write(w, binary.LittleEndian, int32(len(index.LastKey)))
-	binary.Write(w, binary.LittleEndian, index.LastKey)
+	index.LastKey.EncodeTo(w)
 	return binary.Write(w, binary.LittleEndian, index.BlockHandle)
 }
 
 func (index *IndexBlockHandle) DecodeFrom(r io.Reader) error {
-	var tmp int32
-	index.LastKey = make([]byte, tmp)
-	binary.Read(r, binary.LittleEndian, index.LastKey)
+	index.LastKey.DecodeFrom(r)
 	return binary.Read(r, binary.LittleEndian, &index.BlockHandle)
 }
 
