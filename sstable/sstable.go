@@ -37,14 +37,23 @@ func Open(fileName string) (*SsTable, error) {
 		return nil, err
 	}
 	// Read the index block
-	table.index = block.New(table.file, table.footer.IndexHandle)
+	table.index = table.readBlock(table.footer.IndexHandle)
 	return &table, nil
 }
 
-func NewIterator() {
+func (table *SsTable) NewIterator() {
 
 }
 
 func Get(key []byte) ([]byte, error) {
 	return nil, nil
+}
+
+func (table *SsTable) readBlock(blockHandle block.BlockHandle) *block.Block {
+	p := make([]byte, blockHandle.Size)
+	n, err := table.file.ReadAt(p, int64(blockHandle.Offset))
+	if err != nil || uint32(n) != blockHandle.Size {
+		return nil
+	}
+	return block.New(p)
 }
