@@ -15,10 +15,10 @@ type TableBuilder struct {
 	file               *os.File
 	offset             uint32
 	numEntries         int32
-	dataBlockBuilder          block.BlockBuilder
-	indexBlockBuilder         block.BlockBuilder
+	dataBlockBuilder   block.BlockBuilder
+	indexBlockBuilder  block.BlockBuilder
 	pendingIndexEntry  bool
-	pendingIndexHandle block.IndexBlockHandle
+	pendingIndexHandle IndexBlockHandle
 	status             error
 }
 
@@ -38,12 +38,12 @@ func (builder *TableBuilder) Add(internalKey *format.InternalKey) {
 		return
 	}
 	if builder.pendingIndexEntry {
-		builder.indexBlockBuilder.Add(builder.pendingIndexHandle.EncodeToInternalKey())
+		builder.indexBlockBuilder.Add(builder.pendingIndexHandle.InternalKey)
 		builder.pendingIndexEntry = false
 	}
 	// todo : filter block
 
-	builder.pendingIndexHandle.LastKey = format.NewInternalKey(internalKey.Seq, internalKey.Type, internalKey.UserKey, nil)
+	builder.pendingIndexHandle.InternalKey = internalKey
 
 	builder.numEntries++
 	builder.dataBlockBuilder.Add(internalKey)
@@ -55,7 +55,7 @@ func (builder *TableBuilder) flush() {
 	if builder.dataBlockBuilder.Empty() {
 		return
 	}
-	builder.pendingIndexHandle.BlockHandle = builder.writeblock(&builder.dataBlockBuilder)
+	builder.pendingIndexHandle.SetBlockHandle(builder.writeblock(&builder.dataBlockBuilder))
 	builder.pendingIndexEntry = true
 }
 
@@ -66,10 +66,10 @@ func (builder *TableBuilder) Finish() error {
 
 	// write index block
 	if builder.pendingIndexEntry {
-		builder.indexBlockBuilder.Add(builder.pendingIndexHandle.EncodeToInternalKey())
+		builder.indexBlockBuilder.Add(builder.pendingIndexHandle.InternalKey)
 		builder.pendingIndexEntry = false
 	}
-	var footer block.Footer
+	var footer Footer
 	footer.IndexHandle = builder.writeblock(&builder.indexBlockBuilder)
 
 	// write footer block
@@ -78,11 +78,10 @@ func (builder *TableBuilder) Finish() error {
 	return nil
 }
 
-func (builder *TableBuilder) writeblock(blockBuilder *block.BlockBuilder) block.BlockHandle {
+func (builder *TableBuilder) writeblock(blockBuilder *block.BlockBuilder) BlockHandle {
 	content := blockBuilder.Finish()
 	// todo : compress, crc
-	builder.file.Write(content)
-	var blockHandle block.BlockHandle
+	var blockHandle BlockHandle
 	blockHandle.Offset = builder.offset
 	blockHandle.Size = uint32(len(content))
 	builder.offset += uint32(len(content))

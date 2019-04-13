@@ -1,4 +1,4 @@
-package block
+package sstable
 
 import (
 	"encoding/binary"
@@ -32,23 +32,16 @@ func (blockHandle *BlockHandle) DecodeFromBytes(p []byte) {
 }
 
 type IndexBlockHandle struct {
-	LastKey *format.InternalKey
-	BlockHandle
+	*format.InternalKey
 }
 
-func (index *IndexBlockHandle) EncodeToInternalKey() *format.InternalKey {
-	index.LastKey.UserValue = index.BlockHandle.EncodeToBytes()
-	return index.LastKey
+func (index *IndexBlockHandle) SetBlockHandle(blockHandle BlockHandle) {
+	index.UserValue = blockHandle.EncodeToBytes()
 }
 
-func (index *IndexBlockHandle) EncodeTo(w io.Writer) error {
-	index.LastKey.EncodeTo(w)
-	return binary.Write(w, binary.LittleEndian, index.BlockHandle)
-}
-
-func (index *IndexBlockHandle) DecodeFrom(r io.Reader) error {
-	index.LastKey.DecodeFrom(r)
-	return binary.Read(r, binary.LittleEndian, &index.BlockHandle)
+func (index *IndexBlockHandle) GetBlockHandle() (blockHandle BlockHandle) {
+	blockHandle.DecodeFromBytes(index.UserValue)
+	return
 }
 
 type Footer struct {

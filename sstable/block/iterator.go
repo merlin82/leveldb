@@ -43,6 +43,12 @@ func (it *Iterator) Seek(target interface{}) {
 			right = mid
 		}
 	}
+	if left == len(it.block.items)-1 {
+		if format.UserKeyComparator(it.block.items[left].UserKey, target) < 0 {
+			// not found
+			left++
+		}
+	}
 	it.index = left
 }
 

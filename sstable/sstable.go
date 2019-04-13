@@ -2,6 +2,7 @@ package sstable
 
 import (
 	"errors"
+
 	"io"
 	"os"
 
@@ -10,7 +11,7 @@ import (
 
 type SsTable struct {
 	index  *block.Block
-	footer block.Footer
+	footer Footer
 	file   *os.File
 }
 
@@ -41,19 +42,23 @@ func Open(fileName string) (*SsTable, error) {
 	return &table, nil
 }
 
-func (table *SsTable) NewIterator() {
-
+func (table *SsTable) NewIterator() *Iterator {
+	var it Iterator
+	it.table = table
+	it.indexIter = table.index.NewIterator()
+	return &it
 }
 
 func Get(key []byte) ([]byte, error) {
 	return nil, nil
 }
 
-func (table *SsTable) readBlock(blockHandle block.BlockHandle) *block.Block {
+func (table *SsTable) readBlock(blockHandle BlockHandle) *block.Block {
 	p := make([]byte, blockHandle.Size)
 	n, err := table.file.ReadAt(p, int64(blockHandle.Offset))
 	if err != nil || uint32(n) != blockHandle.Size {
 		return nil
 	}
+
 	return block.New(p)
 }
