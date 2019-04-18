@@ -21,6 +21,14 @@ func (it *Iterator) InternalKey() *format.InternalKey {
 	return it.dataIter.InternalKey()
 }
 
+func (it *Iterator) Key() []byte {
+	return it.InternalKey().UserKey
+}
+
+func (it *Iterator) Value() []byte {
+	return it.InternalKey().UserValue
+}
+
 // Advances to the next position.
 // REQUIRES: Valid()
 func (it *Iterator) Next() {
@@ -36,7 +44,7 @@ func (it *Iterator) Prev() {
 }
 
 // Advance to the first entry with a key >= target
-func (it *Iterator) Seek(target interface{}) {
+func (it *Iterator) Seek(target []byte) {
 	// Index Block的block_data字段中，每一条记录的key都满足：
 	// 大于等于Data Block的所有key，并且小于后面所有Data Block的key
 	// 因为Seek是查找key>=target的第一条记录，所以当index_iter_找到时，

@@ -49,7 +49,7 @@ func (table *SsTable) NewIterator() *Iterator {
 	return &it
 }
 
-func Get(key []byte) ([]byte, error) {
+func (table *SsTable) Get(key []byte) ([]byte, error) {
 	return nil, nil
 }
 

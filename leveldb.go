@@ -16,7 +16,13 @@ type Iterator interface {
 
 	// Returns the key at the current position.
 	// REQUIRES: Valid()
-	Key() interface{}
+	Key() []byte
+
+	// Return the value for the current entry.  The underlying storage for
+	// the returned slice is valid only until the next modification of
+	// the iterator.
+	// REQUIRES: Valid()
+	Value() []byte
 
 	// Advances to the next position.
 	// REQUIRES: Valid()
@@ -27,7 +33,7 @@ type Iterator interface {
 	Prev()
 
 	// Advance to the first entry with a key >= target
-	Seek(target interface{})
+	Seek(target []byte)
 
 	// Position at the first entry in list.
 	// Final state of iterator is Valid() iff list is not empty.
