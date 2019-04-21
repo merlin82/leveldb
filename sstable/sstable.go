@@ -48,8 +48,21 @@ func (table *SsTable) NewIterator() *Iterator {
 	return &it
 }
 
-func (table *SsTable) Get(key []byte) (bool, []byte, error) {
-	return false, nil, nil
+func (table *SsTable) Get(key []byte) ([]byte, error) {
+	it := table.NewIterator()
+	it.Seek(key)
+	if it.Valid() {
+		internalKey := it.InternalKey()
+		if internal.UserKeyComparator(key, internalKey.UserKey) == 0 {
+			// 判断valueType
+			if internalKey.Type == internal.TypeValue {
+				return internalKey.UserValue, nil
+			} else {
+				return nil, internal.ErrDeletion
+			}
+		}
+	}
+	return nil, internal.ErrNotFound
 }
 
 func (table *SsTable) readBlock(blockHandle BlockHandle) *block.Block {

@@ -29,13 +29,13 @@ func (tableCache *TableCache) NewIterator(fileNum uint64) *sstable.Iterator {
 	}
 	return nil
 }
-func (tableCache *TableCache) Get(fileNum uint64, key []byte) (bool, []byte, error) {
+func (tableCache *TableCache) Get(fileNum uint64, key []byte) ([]byte, error) {
 	table, err := tableCache.findTable(fileNum)
 	if table != nil {
 		return table.Get(key)
 	}
 
-	return false, nil, err
+	return nil, err
 }
 
 func (tableCache *TableCache) Evict(fileNum uint64) {

@@ -73,8 +73,8 @@ func (v *Version) Get(key []byte) ([]byte, error) {
 		}
 		for i := 0; i < numFiles; i++ {
 			f := files[i]
-			found, value, err := v.tableCache.Get(f.number, key)
-			if found {
+			value, err := v.tableCache.Get(f.number, key)
+			if err != internal.ErrNotFound {
 				return value, err
 			}
 		}
