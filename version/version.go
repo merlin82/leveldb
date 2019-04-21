@@ -10,8 +10,8 @@ type FileMetaData struct {
 	allowSeeks int
 	number     uint64
 	fileSize   uint64
-	smallest   internal.InternalKey
-	largest    internal.InternalKey
+	smallest   *internal.InternalKey
+	largest    *internal.InternalKey
 }
 
 type Version struct {
@@ -21,7 +21,7 @@ type Version struct {
 
 func New(dbName string) *Version {
 	var v Version
-	v.tableCache = newTableCache(dbName)
+	v.tableCache = NewTableCache(dbName)
 	return &v
 }
 
@@ -45,7 +45,7 @@ func (v *Version) Get(key []byte) ([]byte, error) {
 			// overlap user_key and process them in order from newest to oldest.
 			for i := 0; i < numFiles; i++ {
 				f := v.files[level][i]
-				if internal.InternalKeyComparator(key, f.smallest) >= 0 && internal.InternalKeyComparator(key, f.largest) <= 0 {
+				if internal.UserKeyComparator(key, f.smallest.UserKey) >= 0 && internal.UserKeyComparator(key, f.largest.UserKey) <= 0 {
 					tmp = append(tmp, f)
 				}
 			}
@@ -62,7 +62,7 @@ func (v *Version) Get(key []byte) ([]byte, error) {
 				numFiles = 0
 			} else {
 				tmp2[0] = v.files[level][index]
-				if internal.InternalKeyComparator(key, tmp2[0].smallest) < 0 {
+				if internal.UserKeyComparator(key, tmp2[0].smallest.UserKey) < 0 {
 					files = nil
 					numFiles = 0
 				} else {
@@ -88,7 +88,7 @@ func (v *Version) findFile(files []*FileMetaData, key []byte) int {
 	for left < right {
 		mid := (left + right) / 2
 		f := files[mid]
-		if internal.InternalKeyComparator(f.largest, key) < 0 {
+		if internal.UserKeyComparator(f.largest.UserKey, key) < 0 {
 			// Key at "mid.largest" is < "target".  Therefore all
 			// files at or before "mid" are uninteresting.
 			left = mid + 1

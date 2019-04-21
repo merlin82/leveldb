@@ -15,7 +15,7 @@ type TableCache struct {
 	cache  *lru.Cache
 }
 
-func newTableCache(dbName string) *TableCache {
+func NewTableCache(dbName string) *TableCache {
 	var tableCache TableCache
 	tableCache.dbName = dbName
 	tableCache.cache, _ = lru.New(internal.MaxOpenFiles - internal.NumNonTableCacheFiles)

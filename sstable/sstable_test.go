@@ -5,16 +5,16 @@ import (
 
 	"testing"
 
-	"github.com/merlin82/leveldb/format"
+	"github.com/merlin82/leveldb/internal"
 )
 
 func Test_SsTable(t *testing.T) {
 	builder := NewTableBuilder("D:\\000123.ldb")
-	item := format.NewInternalKey(1, format.TypeValue, []byte("123"), []byte("1234"))
+	item := internal.NewInternalKey(1, internal.TypeValue, []byte("123"), []byte("1234"))
 	builder.Add(item)
-	item = format.NewInternalKey(2, format.TypeValue, []byte("124"), []byte("1245"))
+	item = internal.NewInternalKey(2, internal.TypeValue, []byte("124"), []byte("1245"))
 	builder.Add(item)
-	item = format.NewInternalKey(3, format.TypeValue, []byte("125"), []byte("0245"))
+	item = internal.NewInternalKey(3, internal.TypeValue, []byte("125"), []byte("0245"))
 	builder.Add(item)
 	builder.Finish()
 

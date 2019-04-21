@@ -18,11 +18,12 @@ type Db struct {
 	current *version.Version
 }
 
-func Open() *Db {
+func Open(dbName string) *Db {
 	var db Db
 	db.seq = 0
 	db.mem = memtable.New()
 	db.imm = nil
+	db.current = version.New(dbName)
 	return &db
 }
 

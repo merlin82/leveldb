@@ -44,6 +44,6 @@ type Iterator interface {
 	SeekToLast()
 }
 
-func Open() LevelDb {
-	return db.Open()
+func Open(dbName string) LevelDb {
+	return db.Open(dbName)
 }
