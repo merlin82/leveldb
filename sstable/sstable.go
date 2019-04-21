@@ -49,8 +49,8 @@ func (table *SsTable) NewIterator() *Iterator {
 	return &it
 }
 
-func (table *SsTable) Get(key []byte) ([]byte, error) {
-	return nil, nil
+func (table *SsTable) Get(key []byte) (bool, []byte, error) {
+	return false, nil, nil
 }
 
 func (table *SsTable) readBlock(blockHandle BlockHandle) *block.Block {

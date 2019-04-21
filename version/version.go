@@ -2,7 +2,7 @@ package version
 
 import (
 	"errors"
-	"fmt"
+
 	"sort"
 
 	"github.com/merlin82/leveldb/config"
@@ -18,11 +18,14 @@ type FileMetaData struct {
 }
 
 type Version struct {
-	files [config.NumLevels][]*FileMetaData
+	tableCache *TableCache
+	files      [config.NumLevels][]*FileMetaData
 }
 
-func New() *Version {
-	return &Version{}
+func New(dbName string) *Version {
+	var v Version
+	v.tableCache = newTableCache(dbName)
+	return &v
 }
 
 func (v *Version) NumLevelFiles(l int) int {
@@ -73,8 +76,10 @@ func (v *Version) Get(key []byte) ([]byte, error) {
 		}
 		for i := 0; i < numFiles; i++ {
 			f := files[i]
-			fmt.Println(f)
-			return nil, nil
+			found, value, err := v.tableCache.Get(f.number, key)
+			if found {
+				return value, err
+			}
 		}
 	}
 	return nil, errors.New("not found")
