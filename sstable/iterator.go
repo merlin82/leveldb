@@ -1,7 +1,7 @@
 package sstable
 
 import (
-	"github.com/merlin82/leveldb/format"
+	"github.com/merlin82/leveldb/internal"
 	"github.com/merlin82/leveldb/sstable/block"
 )
 
@@ -17,7 +17,7 @@ func (it *Iterator) Valid() bool {
 	return it.dataIter != nil && it.dataIter.Valid()
 }
 
-func (it *Iterator) InternalKey() *format.InternalKey {
+func (it *Iterator) InternalKey() *internal.InternalKey {
 	return it.dataIter.InternalKey()
 }
 

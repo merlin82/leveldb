@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/merlin82/leveldb/format"
+	"github.com/merlin82/leveldb/internal"
 )
 
 type BlockBuilder struct {
@@ -16,7 +16,7 @@ func (blockBuilder *BlockBuilder) Reset() {
 	blockBuilder.buf.Reset()
 }
 
-func (blockBuilder *BlockBuilder) Add(item *format.InternalKey) error {
+func (blockBuilder *BlockBuilder) Add(item *internal.InternalKey) error {
 	blockBuilder.counter++
 	return item.EncodeTo(&blockBuilder.buf)
 }

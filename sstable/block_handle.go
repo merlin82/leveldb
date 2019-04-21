@@ -2,10 +2,9 @@ package sstable
 
 import (
 	"encoding/binary"
-	"errors"
 	"io"
 
-	"github.com/merlin82/leveldb/format"
+	"github.com/merlin82/leveldb/internal"
 )
 
 const (
@@ -32,7 +31,7 @@ func (blockHandle *BlockHandle) DecodeFromBytes(p []byte) {
 }
 
 type IndexBlockHandle struct {
-	*format.InternalKey
+	*internal.InternalKey
 }
 
 func (index *IndexBlockHandle) SetBlockHandle(blockHandle BlockHandle) {
@@ -74,7 +73,7 @@ func (footer *Footer) DecodeFrom(r io.Reader) error {
 		return err
 	}
 	if magic != kTableMagicNumber {
-		return errors.New("not an sstable (bad magic number)")
+		return internal.ErrTableFileMagic
 	}
 	return nil
 }

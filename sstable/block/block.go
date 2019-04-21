@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/merlin82/leveldb/format"
+	"github.com/merlin82/leveldb/internal"
 )
 
 type Block struct {
-	items []format.InternalKey
+	items []internal.InternalKey
 }
 
 func New(p []byte) *Block {
@@ -17,7 +17,7 @@ func New(p []byte) *Block {
 	counter := binary.LittleEndian.Uint32(p[len(p)-4:])
 
 	for i := uint32(0); i < counter; i++ {
-		var item format.InternalKey
+		var item internal.InternalKey
 		err := item.DecodeFrom(data)
 		if err != nil {
 			return nil

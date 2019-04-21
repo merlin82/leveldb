@@ -5,8 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/merlin82/leveldb/config"
-	"github.com/merlin82/leveldb/format"
+	"github.com/merlin82/leveldb/internal"
 	"github.com/merlin82/leveldb/memtable"
 	"github.com/merlin82/leveldb/version"
 )
@@ -38,7 +37,7 @@ func (db *Db) Put(key, value []byte) error {
 	// todo : add log
 
 	//
-	db.mem.Add(seq, format.TypeValue, key, value)
+	db.mem.Add(seq, internal.TypeValue, key, value)
 	return nil
 }
 
@@ -48,14 +47,14 @@ func (db *Db) Get(key []byte) ([]byte, error) {
 	imm := db.mem
 	current := db.current
 	db.mu.Unlock()
-	found, value, err := mem.Get(key)
-	if found {
+	value, err := mem.Get(key)
+	if err != internal.ErrNotFound {
 		return value, err
 	}
 
 	if imm != nil {
-		found, value, err := imm.Get(key)
-		if found {
+		value, err := imm.Get(key)
+		if err != internal.ErrNotFound {
 			return value, err
 		}
 	}
@@ -66,7 +65,7 @@ func (db *Db) Get(key []byte) ([]byte, error) {
 
 func (db *Db) Delete(key []byte) error {
 	seq := atomic.AddInt64(&db.seq, 1)
-	db.mem.Add(seq, format.TypeDeletion, key, nil)
+	db.mem.Add(seq, internal.TypeDeletion, key, nil)
 	return nil
 }
 
@@ -74,11 +73,11 @@ func (db *Db) makeRoomForWrite() error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	for true {
-		if db.current.NumLevelFiles(0) >= config.L0_SlowdownWritesTrigger {
+		if db.current.NumLevelFiles(0) >= internal.L0_SlowdownWritesTrigger {
 			db.mu.Unlock()
 			time.Sleep(time.Duration(1000) * time.Microsecond)
 			db.mu.Lock()
-		} else if db.mem.ApproximateMemoryUsage() <= config.Write_buffer_size {
+		} else if db.mem.ApproximateMemoryUsage() <= internal.Write_buffer_size {
 			return nil
 		} else if db.imm != nil {
 			//  Current memtable full; waiting

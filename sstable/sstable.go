@@ -1,11 +1,10 @@
 package sstable
 
 import (
-	"errors"
-
 	"io"
 	"os"
 
+	"github.com/merlin82/leveldb/internal"
 	"github.com/merlin82/leveldb/sstable/block"
 )
 
@@ -26,7 +25,7 @@ func Open(fileName string) (*SsTable, error) {
 	// Read the footer block
 	footerSize := int64(table.footer.Size())
 	if stat.Size() < footerSize {
-		return nil, errors.New("file is too short to be an sstable")
+		return nil, internal.ErrTableFileTooShort
 	}
 
 	_, err = table.file.Seek(-footerSize, io.SeekEnd)

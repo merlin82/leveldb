@@ -1,7 +1,7 @@
 package memtable
 
 import (
-	"github.com/merlin82/leveldb/format"
+	"github.com/merlin82/leveldb/internal"
 	"github.com/merlin82/leveldb/skiplist"
 )
 
@@ -14,8 +14,8 @@ func (it *Iterator) Valid() bool {
 	return it.listIter.Valid()
 }
 
-func (it *Iterator) InternalKey() *format.InternalKey {
-	return it.listIter.Key().(*format.InternalKey)
+func (it *Iterator) InternalKey() *internal.InternalKey {
+	return it.listIter.Key().(*internal.InternalKey)
 }
 
 // Advances to the next position.

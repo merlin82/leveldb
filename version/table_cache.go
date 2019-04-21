@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/hashicorp/golang-lru"
-	"github.com/merlin82/leveldb/config"
+	"github.com/merlin82/leveldb/internal"
 	"github.com/merlin82/leveldb/sstable"
 )
 
@@ -18,7 +18,7 @@ type TableCache struct {
 func newTableCache(dbName string) *TableCache {
 	var tableCache TableCache
 	tableCache.dbName = dbName
-	tableCache.cache, _ = lru.New(config.MaxOpenFiles - config.NumNonTableCacheFiles)
+	tableCache.cache, _ = lru.New(internal.MaxOpenFiles - internal.NumNonTableCacheFiles)
 	return &tableCache
 }
 

@@ -1,4 +1,4 @@
-package config
+package internal
 
 const (
 	L0_SlowdownWritesTrigger = 8

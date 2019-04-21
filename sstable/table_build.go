@@ -3,7 +3,7 @@ package sstable
 import (
 	"os"
 
-	"github.com/merlin82/leveldb/format"
+	"github.com/merlin82/leveldb/internal"
 	"github.com/merlin82/leveldb/sstable/block"
 )
 
@@ -33,7 +33,7 @@ func NewTableBuilder(fileName string) *TableBuilder {
 	return &builder
 }
 
-func (builder *TableBuilder) Add(internalKey *format.InternalKey) {
+func (builder *TableBuilder) Add(internalKey *internal.InternalKey) {
 	if builder.status != nil {
 		return
 	}

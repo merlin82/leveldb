@@ -1,25 +1,22 @@
 package version
 
 import (
-	"errors"
-
 	"sort"
 
-	"github.com/merlin82/leveldb/config"
-	"github.com/merlin82/leveldb/format"
+	"github.com/merlin82/leveldb/internal"
 )
 
 type FileMetaData struct {
 	allowSeeks int
 	number     uint64
 	fileSize   uint64
-	smallest   format.InternalKey
-	largest    format.InternalKey
+	smallest   internal.InternalKey
+	largest    internal.InternalKey
 }
 
 type Version struct {
 	tableCache *TableCache
-	files      [config.NumLevels][]*FileMetaData
+	files      [internal.NumLevels][]*FileMetaData
 }
 
 func New(dbName string) *Version {
@@ -38,7 +35,7 @@ func (v *Version) Get(key []byte) ([]byte, error) {
 	// We can search level-by-level since entries never hop across
 	// levels.  Therefore we are guaranteed that if we find data
 	// in an smaller level, later levels are irrelevant.
-	for level := 0; level < config.NumLevels; level++ {
+	for level := 0; level < internal.NumLevels; level++ {
 		numFiles := len(v.files[level])
 		if numFiles == 0 {
 			continue
@@ -48,7 +45,7 @@ func (v *Version) Get(key []byte) ([]byte, error) {
 			// overlap user_key and process them in order from newest to oldest.
 			for i := 0; i < numFiles; i++ {
 				f := v.files[level][i]
-				if format.InternalKeyComparator(key, f.smallest) >= 0 && format.InternalKeyComparator(key, f.largest) <= 0 {
+				if internal.InternalKeyComparator(key, f.smallest) >= 0 && internal.InternalKeyComparator(key, f.largest) <= 0 {
 					tmp = append(tmp, f)
 				}
 			}
@@ -65,7 +62,7 @@ func (v *Version) Get(key []byte) ([]byte, error) {
 				numFiles = 0
 			} else {
 				tmp2[0] = v.files[level][index]
-				if format.InternalKeyComparator(key, tmp2[0].smallest) < 0 {
+				if internal.InternalKeyComparator(key, tmp2[0].smallest) < 0 {
 					files = nil
 					numFiles = 0
 				} else {
@@ -82,7 +79,7 @@ func (v *Version) Get(key []byte) ([]byte, error) {
 			}
 		}
 	}
-	return nil, errors.New("not found")
+	return nil, internal.ErrNotFound
 }
 
 func (v *Version) findFile(files []*FileMetaData, key []byte) int {
@@ -91,7 +88,7 @@ func (v *Version) findFile(files []*FileMetaData, key []byte) int {
 	for left < right {
 		mid := (left + right) / 2
 		f := files[mid]
-		if format.InternalKeyComparator(f.largest, key) < 0 {
+		if internal.InternalKeyComparator(f.largest, key) < 0 {
 			// Key at "mid.largest" is < "target".  Therefore all
 			// files at or before "mid" are uninteresting.
 			left = mid + 1

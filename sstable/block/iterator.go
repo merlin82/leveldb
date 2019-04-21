@@ -1,7 +1,7 @@
 package block
 
 import (
-	"github.com/merlin82/leveldb/format"
+	"github.com/merlin82/leveldb/internal"
 )
 
 type Iterator struct {
@@ -14,7 +14,7 @@ func (it *Iterator) Valid() bool {
 	return it.index >= 0 && it.index < len(it.block.items)
 }
 
-func (it *Iterator) InternalKey() *format.InternalKey {
+func (it *Iterator) InternalKey() *internal.InternalKey {
 	return &it.block.items[it.index]
 }
 
@@ -37,14 +37,14 @@ func (it *Iterator) Seek(target interface{}) {
 	right := len(it.block.items) - 1
 	for left < right {
 		mid := (left + right) / 2
-		if format.UserKeyComparator(it.block.items[mid].UserKey, target) < 0 {
+		if internal.UserKeyComparator(it.block.items[mid].UserKey, target) < 0 {
 			left = mid + 1
 		} else {
 			right = mid
 		}
 	}
 	if left == len(it.block.items)-1 {
-		if format.UserKeyComparator(it.block.items[left].UserKey, target) < 0 {
+		if internal.UserKeyComparator(it.block.items[left].UserKey, target) < 0 {
 			// not found
 			left++
 		}
