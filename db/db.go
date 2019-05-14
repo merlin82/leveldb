@@ -11,11 +11,13 @@ import (
 )
 
 type Db struct {
-	mu      sync.Mutex
-	seq     int64
-	mem     *memtable.MemTable
-	imm     *memtable.MemTable
-	current *version.Version
+	mu                    sync.Mutex
+	cond                  *sync.Cond
+	seq                   int64
+	mem                   *memtable.MemTable
+	imm                   *memtable.MemTable
+	current               *version.Version
+	bgCompactionScheduled bool
 }
 
 func Open(dbName string) *Db {
@@ -23,8 +25,18 @@ func Open(dbName string) *Db {
 	db.seq = 0
 	db.mem = memtable.New()
 	db.imm = nil
+	db.cond = sync.NewCond(&db.mu)
 	db.current = version.New(dbName)
+	db.bgCompactionScheduled = false
 	return &db
+}
+
+func (db *Db) Close() {
+	db.mu.Lock()
+	for db.bgCompactionScheduled {
+		db.cond.Wait()
+	}
+	db.mu.Unlock()
 }
 
 func (db *Db) Put(key, value []byte) error {
@@ -37,7 +49,6 @@ func (db *Db) Put(key, value []byte) error {
 
 	// todo : add log
 
-	//
 	db.mem.Add(seq, internal.TypeValue, key, value)
 	return nil
 }
@@ -82,13 +93,13 @@ func (db *Db) makeRoomForWrite() error {
 			return nil
 		} else if db.imm != nil {
 			//  Current memtable full; waiting
-			// todo:condition
+			db.cond.Wait()
 		} else {
 			// Attempt to switch to a new memtable and trigger compaction of old
 			// todo : switch log
 			db.imm = db.mem
 			db.mem = memtable.New()
-			// todo : MaybeScheduleCompaction
+			db.maybeScheduleCompaction()
 		}
 	}
 
