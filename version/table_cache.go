@@ -1,7 +1,6 @@
 package version
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/hashicorp/golang-lru"
@@ -49,16 +48,8 @@ func (tableCache *TableCache) findTable(fileNum uint64) (*sstable.SsTable, error
 	if ok {
 		return table.(*sstable.SsTable), nil
 	} else {
-		ssTable, err := sstable.Open(tableFileName(tableCache.dbName, fileNum))
+		ssTable, err := sstable.Open(internal.TableFileName(tableCache.dbName, fileNum))
 		tableCache.cache.Add(fileNum, ssTable)
 		return ssTable, err
 	}
-}
-
-func makeFileName(name string, number uint64, suffix string) string {
-	return fmt.Sprintf("%s/%06d.%s", name, number, suffix)
-}
-
-func tableFileName(name string, number uint64) string {
-	return makeFileName(name, number, "ldb")
 }

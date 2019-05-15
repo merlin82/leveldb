@@ -15,19 +15,34 @@ type FileMetaData struct {
 }
 
 type Version struct {
-	tableCache *TableCache
-	files      [internal.NumLevels][]*FileMetaData
+	tableCache     *TableCache
+	nextFileNumber uint64
+	files          [internal.NumLevels][]*FileMetaData
 }
 
 func New(dbName string) *Version {
 	var v Version
 	v.tableCache = NewTableCache(dbName)
+	v.nextFileNumber = 1
 	return &v
+}
+
+func (v *Version) Copy() *Version {
+	var c Version
+
+	c.tableCache = v.tableCache
+	c.nextFileNumber = v.nextFileNumber
+	for level := 0; level < internal.NumLevels; level++ {
+		c.files[level] = make([]*FileMetaData, len(v.files[level]))
+		copy(c.files[level], v.files[level])
+	}
+	return &c
 }
 
 func (v *Version) NumLevelFiles(l int) int {
 	return len(v.files[l])
 }
+
 func (v *Version) Get(key []byte) ([]byte, error) {
 	var tmp []*FileMetaData
 	var tmp2 [1]*FileMetaData

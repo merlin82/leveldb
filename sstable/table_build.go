@@ -33,6 +33,10 @@ func NewTableBuilder(fileName string) *TableBuilder {
 	return &builder
 }
 
+func (builder *TableBuilder) FileSize() uint32 {
+	return builder.offset
+}
+
 func (builder *TableBuilder) Add(internalKey *internal.InternalKey) {
 	if builder.status != nil {
 		return

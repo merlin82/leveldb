@@ -1,9 +1,5 @@
 package db
 
-import (
-	"github.com/merlin82/leveldb/version"
-)
-
 func (db *Db) maybeScheduleCompaction() {
 	if db.bgCompactionScheduled {
 		return
@@ -33,7 +29,10 @@ func (db *Db) backgroundCompaction() {
 }
 
 func (db *Db) compactMemTable() {
-	//var meta version.FileMetaData
-	//meta.number = db.current.NewFileNumber()
-
+	version := db.current.Copy()
+	db.mu.Unlock()
+	version.WriteLevel0Table(db.imm)
+	db.mu.Lock()
+	db.imm = nil
+	db.current = version
 }
