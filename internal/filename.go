@@ -19,3 +19,6 @@ func DescriptorFileName(dbname string, number uint64) string {
 func CurrentFileName(dbname string) string {
 	return dbname + "/CURRENT"
 }
+func TempFileName(dbname string, number uint64) string {
+	return makeFileName(dbname, number, "dbtmp")
+}

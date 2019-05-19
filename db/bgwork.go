@@ -1,5 +1,13 @@
 package db
 
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+
+	"github.com/merlin82/leveldb/internal"
+)
+
 func (db *Db) maybeScheduleCompaction() {
 	if db.bgCompactionScheduled {
 		return
@@ -32,7 +40,15 @@ func (db *Db) compactMemTable() {
 	version := db.current.Copy()
 	db.mu.Unlock()
 	version.WriteLevel0Table(db.imm)
+	descriptorNumber, _ := version.Save()
+	db.SetCurrentFile(descriptorNumber)
 	db.mu.Lock()
 	db.imm = nil
 	db.current = version
+}
+
+func (db *Db) SetCurrentFile(descriptorNumber uint64) {
+	tmp := internal.TempFileName(db.name, descriptorNumber)
+	ioutil.WriteFile(tmp, []byte(fmt.Sprintf("%d", descriptorNumber)), 0600)
+	os.Rename(tmp, internal.CurrentFileName(db.name))
 }

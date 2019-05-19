@@ -97,13 +97,13 @@ func (v *Version) WriteLevel0Table(imm *memtable.MemTable) {
 
 	// 挑选合适的level
 	level := 0
-	/*if !v.overlapInLevel(0, meta.smallest.UserKey, meta.largest.UserKey) {
-		for level := 0; level < internal.MaxMemCompactLevel; level++ {
+	if !v.overlapInLevel(0, meta.smallest.UserKey, meta.largest.UserKey) {
+		for ; level < internal.MaxMemCompactLevel; level++ {
 			if v.overlapInLevel(level+1, meta.smallest.UserKey, meta.largest.UserKey) {
 				break
 			}
 		}
-	}*/
+	}
 
 	v.addFile(level, &meta)
 }
@@ -127,7 +127,7 @@ func (v *Version) overlapInLevel(level int, smallestKey, largestKey []byte) bool
 		if index >= numFiles {
 			return false
 		}
-		if internal.UserKeyComparator(largestKey, v.files[level][index].smallest.UserKey) < 0 {
+		if internal.UserKeyComparator(largestKey, v.files[level][index].smallest.UserKey) > 0 {
 			return true
 		}
 	}

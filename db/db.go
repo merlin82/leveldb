@@ -3,6 +3,7 @@ package db
 import (
 	"sync"
 	"sync/atomic"
+
 	"time"
 
 	"github.com/merlin82/leveldb/internal"
@@ -11,6 +12,7 @@ import (
 )
 
 type Db struct {
+	name                  string
 	mu                    sync.Mutex
 	cond                  *sync.Cond
 	seq                   int64
@@ -22,6 +24,7 @@ type Db struct {
 
 func Open(dbName string) *Db {
 	var db Db
+	db.name = dbName
 	db.seq = 0
 	db.mem = memtable.New()
 	db.imm = nil
@@ -84,6 +87,7 @@ func (db *Db) Delete(key []byte) error {
 func (db *Db) makeRoomForWrite() error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
+
 	for true {
 		if db.current.NumLevelFiles(0) >= internal.L0_SlowdownWritesTrigger {
 			db.mu.Unlock()
