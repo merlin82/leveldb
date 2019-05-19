@@ -59,6 +59,8 @@ func (builder *TableBuilder) flush() {
 	if builder.dataBlockBuilder.Empty() {
 		return
 	}
+	orgKey := builder.pendingIndexHandle.InternalKey
+	builder.pendingIndexHandle.InternalKey = internal.NewInternalKey(orgKey.Seq, orgKey.Type, orgKey.UserKey, nil)
 	builder.pendingIndexHandle.SetBlockHandle(builder.writeblock(&builder.dataBlockBuilder))
 	builder.pendingIndexEntry = true
 }

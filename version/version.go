@@ -1,13 +1,14 @@
 package version
 
 import (
+	"os"
 	"sort"
 
 	"github.com/merlin82/leveldb/internal"
 )
 
 type FileMetaData struct {
-	allowSeeks int
+	allowSeeks uint64
 	number     uint64
 	fileSize   uint64
 	smallest   *internal.InternalKey
@@ -25,6 +26,29 @@ func New(dbName string) *Version {
 	v.tableCache = NewTableCache(dbName)
 	v.nextFileNumber = 1
 	return &v
+}
+
+func Load(dbName string, number uint64) (*Version, error) {
+	fileName := internal.DescriptorFileName(dbName, number)
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	v := New(dbName)
+	return v, v.DecodeFrom(file)
+}
+
+func (v *Version) Save() (uint64, error) {
+	tmp := v.nextFileNumber
+	fileName := internal.DescriptorFileName(v.tableCache.dbName, v.nextFileNumber)
+	v.nextFileNumber++
+	file, err := os.Create(fileName)
+	if err != nil {
+		return tmp, err
+	}
+	defer file.Close()
+	return tmp, v.EncodeTo(file)
 }
 
 func (v *Version) Copy() *Version {

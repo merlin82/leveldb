@@ -6,4 +6,5 @@ const (
 	NumLevels                = 7
 	MaxOpenFiles             = 1000
 	NumNonTableCacheFiles    = 10
+	MaxMemCompactLevel       = 2
 )

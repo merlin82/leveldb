@@ -13,7 +13,7 @@ func TableFileName(dbname string, number uint64) string {
 }
 
 func DescriptorFileName(dbname string, number uint64) string {
-	return fmt.Sprintf("%s/MANIFEST-%06llu", dbname, number)
+	return fmt.Sprintf("%s/MANIFEST-%06d", dbname, number)
 }
 
 func CurrentFileName(dbname string) string {
