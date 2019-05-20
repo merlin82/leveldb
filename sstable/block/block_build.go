@@ -13,6 +13,7 @@ type BlockBuilder struct {
 }
 
 func (blockBuilder *BlockBuilder) Reset() {
+	blockBuilder.counter = 0
 	blockBuilder.buf.Reset()
 }
 
