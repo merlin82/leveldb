@@ -35,7 +35,7 @@ func Test_Db(t *testing.T) {
 	db.Put([]byte("123"), []byte("789"))
 	value, _ = db.Get([]byte("123"))
 	fmt.Println(string(value))
-
+	db.Close()
 }
 
 func Test_Db2(t *testing.T) {
@@ -46,9 +46,11 @@ func Test_Db2(t *testing.T) {
 		db.Put(GetRandomString(10), GetRandomString(10))
 	}
 	value, err := db.Get([]byte("123"))
-	fmt.Println(err)
-
-	fmt.Println(string(value))
+	fmt.Println("db:", err, string(value))
 	db.Close()
 
+	db2 := Open("D:\\leveldbtest")
+	value, err = db2.Get([]byte("123"))
+	fmt.Println("db reopen:", err, string(value))
+	db2.Close()
 }

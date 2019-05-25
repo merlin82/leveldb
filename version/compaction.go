@@ -51,6 +51,7 @@ func (meta *FileMetaData) DecodeFrom(r io.Reader) error {
 
 func (v *Version) EncodeTo(w io.Writer) error {
 	binary.Write(w, binary.LittleEndian, v.nextFileNumber)
+	binary.Write(w, binary.LittleEndian, v.seq)
 	for level := 0; level < internal.NumLevels; level++ {
 		numFiles := len(v.files[level])
 		binary.Write(w, binary.LittleEndian, int32(numFiles))
@@ -63,9 +64,8 @@ func (v *Version) EncodeTo(w io.Writer) error {
 }
 
 func (v *Version) DecodeFrom(r io.Reader) error {
-
 	binary.Read(r, binary.LittleEndian, &v.nextFileNumber)
-
+	binary.Read(r, binary.LittleEndian, &v.seq)
 	var numFiles int32
 	for level := 0; level < internal.NumLevels; level++ {
 		binary.Read(r, binary.LittleEndian, &numFiles)
@@ -84,27 +84,27 @@ func (v *Version) deleteFile(level int, meta *FileMetaData) {
 	for i := 0; i < numFiles; i++ {
 		if v.files[level][i].number == meta.number {
 			v.files[level] = append(v.files[level][:i], v.files[level][i+1:]...)
-			log.Printf("deleteFile, level:%d, num:%d, size:%d", level, meta.number, len(v.files[level]))
+			log.Printf("deleteFile, level:%d, num:%d", level, meta.number)
 			break
 		}
 	}
-
 }
 
 func (v *Version) addFile(level int, meta *FileMetaData) {
-	log.Printf("addFile, level:%d, num:%d", level, meta.number)
+	log.Printf("addFile, level:%d, num:%d, %s-%s", level, meta.number, string(meta.smallest.UserKey), string(meta.largest.UserKey))
 	if level == 0 {
 		// 0层没有排序
 		v.files[level] = append(v.files[level], meta)
 	} else {
-		v.files[level] = append(v.files[level], meta)
 		numFiles := len(v.files[level])
-		//todo: 二分法
-		for i := 0; i < numFiles-1; i++ {
-			if internal.InternalKeyComparator(v.files[level][i].largest, meta.smallest) < 0 {
-				v.files[level][i], v.files[level][numFiles-1] = v.files[level][numFiles-1], v.files[level][i]
-				break
-			}
+		index := v.findFile(v.files[level], meta.smallest.UserKey)
+		if index >= numFiles {
+			v.files[level] = append(v.files[level], meta)
+		} else {
+			var tmp []*FileMetaData
+			tmp = append(tmp, v.files[level][:index]...)
+			tmp = append(tmp, meta)
+			v.files[level] = append(tmp, v.files[level][index:]...)
 		}
 	}
 }
@@ -182,10 +182,10 @@ func (v *Version) DoCompactionWork() bool {
 		v.addFile(c.level+1, c.inputs[0][0])
 		return true
 	}
-
+	var list []*FileMetaData
+	var current_key *internal.InternalKey
 	iter := v.makeInputIterator(c)
-	iter.SeekToFirst()
-	for iter.Valid() {
+	for iter.SeekToFirst(); iter.Valid(); iter.Next() {
 		var meta FileMetaData
 		meta.allowSeeks = 1 << 30
 		meta.number = v.nextFileNumber
@@ -194,6 +194,16 @@ func (v *Version) DoCompactionWork() bool {
 
 		meta.smallest = iter.InternalKey()
 		for ; iter.Valid(); iter.Next() {
+			if current_key != nil {
+				// 去除重复的记录
+				ret := internal.UserKeyComparator(iter.InternalKey().UserKey, current_key.UserKey)
+				if ret == 0 {
+					continue
+				} else if ret < 0 {
+					log.Fatalf("%s < %s", string(iter.InternalKey().UserKey), string(current_key.UserKey))
+				}
+				current_key = iter.InternalKey()
+			}
 			meta.largest = iter.InternalKey()
 			builder.Add(iter.InternalKey())
 			if builder.FileSize() > internal.MaxFileSize {
@@ -205,11 +215,17 @@ func (v *Version) DoCompactionWork() bool {
 		meta.smallest.UserValue = nil
 		meta.largest.UserValue = nil
 
-		v.addFile(c.level+1, &meta)
+		list = append(list, &meta)
 	}
 
 	for i := 0; i < len(c.inputs[0]); i++ {
 		v.deleteFile(c.level, c.inputs[0][i])
+	}
+	for i := 0; i < len(c.inputs[1]); i++ {
+		v.deleteFile(c.level+1, c.inputs[1][i])
+	}
+	for i := 0; i < len(list); i++ {
+		v.addFile(c.level+1, list[i])
 	}
 	return true
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 
 	"github.com/merlin82/leveldb/internal"
 )
@@ -46,4 +47,16 @@ func (db *Db) SetCurrentFile(descriptorNumber uint64) {
 	tmp := internal.TempFileName(db.name, descriptorNumber)
 	ioutil.WriteFile(tmp, []byte(fmt.Sprintf("%d", descriptorNumber)), 0600)
 	os.Rename(tmp, internal.CurrentFileName(db.name))
+}
+
+func (db *Db) ReadCurrentFile() uint64 {
+	b, err := ioutil.ReadFile(internal.CurrentFileName(db.name))
+	if err != nil {
+		return 0
+	}
+	descriptorNumber, err := strconv.ParseUint(string(b), 10, 64)
+	if err != nil {
+		return 0
+	}
+	return descriptorNumber
 }

@@ -19,6 +19,7 @@ type FileMetaData struct {
 type Version struct {
 	tableCache     *TableCache
 	nextFileNumber uint64
+	seq            uint64
 	files          [internal.NumLevels][]*FileMetaData
 	// Per-level key at which the next compaction at that level should start.
 	// Either an empty string, or a valid InternalKey.
@@ -71,6 +72,10 @@ func (v *Version) Copy() *Version {
 		copy(c.files[level], v.files[level])
 	}
 	return &c
+}
+func (v *Version) NextSeq() uint64 {
+	v.seq++
+	return v.seq
 }
 
 func (v *Version) NumLevelFiles(l int) int {

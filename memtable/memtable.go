@@ -20,7 +20,7 @@ func (memTable *MemTable) NewIterator() *Iterator {
 	return &Iterator{listIter: memTable.table.NewIterator()}
 }
 
-func (memTable *MemTable) Add(seq int64, valueType internal.ValueType, key, value []byte) {
+func (memTable *MemTable) Add(seq uint64, valueType internal.ValueType, key, value []byte) {
 	internalKey := internal.NewInternalKey(seq, valueType, key, value)
 
 	memTable.memoryUsage += uint64(16 + len(key) + len(value))

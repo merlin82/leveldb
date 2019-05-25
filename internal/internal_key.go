@@ -15,13 +15,13 @@ const (
 )
 
 type InternalKey struct {
-	Seq       int64
+	Seq       uint64
 	Type      ValueType
 	UserKey   []byte
 	UserValue []byte
 }
 
-func NewInternalKey(seq int64, valueType ValueType, key, value []byte) *InternalKey {
+func NewInternalKey(seq uint64, valueType ValueType, key, value []byte) *InternalKey {
 	var internalKey InternalKey
 	internalKey.Seq = seq
 	internalKey.Type = valueType
@@ -56,7 +56,7 @@ func (key *InternalKey) DecodeFrom(r io.Reader) error {
 }
 
 func LookupKey(key []byte) *InternalKey {
-	return NewInternalKey(math.MaxInt64, TypeValue, key, nil)
+	return NewInternalKey(math.MaxUint64, TypeValue, key, nil)
 }
 
 func InternalKeyComparator(a, b interface{}) int {

@@ -2,7 +2,6 @@ package db
 
 import (
 	"sync"
-	"sync/atomic"
 
 	"time"
 
@@ -15,7 +14,6 @@ type Db struct {
 	name                  string
 	mu                    sync.Mutex
 	cond                  *sync.Cond
-	seq                   int64
 	mem                   *memtable.MemTable
 	imm                   *memtable.MemTable
 	current               *version.Version
@@ -25,12 +23,21 @@ type Db struct {
 func Open(dbName string) *Db {
 	var db Db
 	db.name = dbName
-	db.seq = 0
 	db.mem = memtable.New()
 	db.imm = nil
-	db.cond = sync.NewCond(&db.mu)
-	db.current = version.New(dbName)
 	db.bgCompactionScheduled = false
+	db.cond = sync.NewCond(&db.mu)
+	num := db.ReadCurrentFile()
+	if num > 0 {
+		v, err := version.Load(dbName, num)
+		if err != nil {
+			return nil
+		}
+		db.current = v
+	} else {
+		db.current = version.New(dbName)
+	}
+
 	return &db
 }
 
@@ -44,11 +51,10 @@ func (db *Db) Close() {
 
 func (db *Db) Put(key, value []byte) error {
 	// May temporarily unlock and wait.
-	err := db.makeRoomForWrite()
+	seq, err := db.makeRoomForWrite()
 	if err != nil {
 		return err
 	}
-	seq := atomic.AddInt64(&db.seq, 1) //version
 
 	// todo : add log
 
@@ -79,12 +85,15 @@ func (db *Db) Get(key []byte) ([]byte, error) {
 }
 
 func (db *Db) Delete(key []byte) error {
-	seq := atomic.AddInt64(&db.seq, 1)
+	seq, err := db.makeRoomForWrite()
+	if err != nil {
+		return err
+	}
 	db.mem.Add(seq, internal.TypeDeletion, key, nil)
 	return nil
 }
 
-func (db *Db) makeRoomForWrite() error {
+func (db *Db) makeRoomForWrite() (uint64, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
@@ -94,7 +103,7 @@ func (db *Db) makeRoomForWrite() error {
 			time.Sleep(time.Duration(1000) * time.Microsecond)
 			db.mu.Lock()
 		} else if db.mem.ApproximateMemoryUsage() <= internal.Write_buffer_size {
-			return nil
+			return db.current.NextSeq(), nil
 		} else if db.imm != nil {
 			//  Current memtable full; waiting
 			db.cond.Wait()
@@ -107,5 +116,5 @@ func (db *Db) makeRoomForWrite() error {
 		}
 	}
 
-	return nil
+	return db.current.NextSeq(), nil
 }
