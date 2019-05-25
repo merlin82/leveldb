@@ -1,6 +1,7 @@
 package version
 
 import (
+	"log"
 	"os"
 	"sort"
 
@@ -19,6 +20,9 @@ type Version struct {
 	tableCache     *TableCache
 	nextFileNumber uint64
 	files          [internal.NumLevels][]*FileMetaData
+	// Per-level key at which the next compaction at that level should start.
+	// Either an empty string, or a valid InternalKey.
+	compactPointer [internal.NumLevels]*internal.InternalKey
 }
 
 func New(dbName string) *Version {
@@ -50,7 +54,13 @@ func (v *Version) Save() (uint64, error) {
 	defer file.Close()
 	return tmp, v.EncodeTo(file)
 }
-
+func (v *Version) Log() {
+	for level := 0; level < internal.NumLevels; level++ {
+		for i := 0; i < len(v.files[level]); i++ {
+			log.Printf("version[%d]: %d", level, v.files[level][i].number)
+		}
+	}
+}
 func (v *Version) Copy() *Version {
 	var c Version
 

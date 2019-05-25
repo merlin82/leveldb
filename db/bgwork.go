@@ -21,25 +21,20 @@ func (db *Db) backgroundCall() {
 	defer db.mu.Unlock()
 	db.backgroundCompaction()
 	db.bgCompactionScheduled = false
-
-	// Previous compaction may have produced too many files in a level,
-	// so reschedule another compaction if needed.
-	db.maybeScheduleCompaction()
 	db.cond.Broadcast()
 }
 
 func (db *Db) backgroundCompaction() {
-	if db.imm != nil {
-		db.compactMemTable()
-		return
-	}
-	// new version
-}
-
-func (db *Db) compactMemTable() {
+	imm := db.imm
 	version := db.current.Copy()
 	db.mu.Unlock()
-	version.WriteLevel0Table(db.imm)
+
+	if imm != nil {
+		version.WriteLevel0Table(imm)
+	}
+	for version.DoCompactionWork() {
+		version.Log()
+	}
 	descriptorNumber, _ := version.Save()
 	db.SetCurrentFile(descriptorNumber)
 	db.mu.Lock()
