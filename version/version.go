@@ -67,6 +67,7 @@ func (v *Version) Copy() *Version {
 
 	c.tableCache = v.tableCache
 	c.nextFileNumber = v.nextFileNumber
+	c.seq = v.seq
 	for level := 0; level < internal.NumLevels; level++ {
 		c.files[level] = make([]*FileMetaData, len(v.files[level]))
 		copy(c.files[level], v.files[level])

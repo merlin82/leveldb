@@ -30,9 +30,11 @@ func (db *Db) backgroundCompaction() {
 	version := db.current.Copy()
 	db.mu.Unlock()
 
+	// minor compaction
 	if imm != nil {
 		version.WriteLevel0Table(imm)
 	}
+	// major compaction
 	for version.DoCompactionWork() {
 		version.Log()
 	}
