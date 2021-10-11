@@ -65,7 +65,7 @@ func (db *Db) Put(key, value []byte) error {
 func (db *Db) Get(key []byte) ([]byte, error) {
 	db.mu.Lock()
 	mem := db.mem
-	imm := db.mem
+	imm := db.imm
 	current := db.current
 	db.mu.Unlock()
 	value, err := mem.Get(key)
